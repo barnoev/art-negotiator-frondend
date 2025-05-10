@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Art Chat - Discover and negotiate art prices">
+  <title>Art Collection • Fine Art Gallery</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* === Global CSS Variables === */
+    :root {
+      --color-bg: #f8f8f8;
+      --color-card: #ffffff;
+      --color-text: #222222;
+      --color-text-secondary: #555555;
+      --color-cta: #3d6cb9;
+      --color-cta-hover: #2c5296;
+      --color-chat-bg: #f0f2f5;
+      --color-user-message-bg: var(--color-cta);
+      --color-user-message-text: #ffffff;
+      --color-bot-message-bg: #e5e5ea;
+      --color-bot-message-text: var(--color-text);
+      --color-thinking-bg: var(--color-bot-message-bg);
+      --color-dot-thinking: var(--color-cta); 
+      --color-border: #e0e0e0; 
+      --color-hover: #f0f0f0; 
+      --spacing-xs: 4px; --spacing-sm: 8px; --spacing-md: 16px; --spacing-lg: 28px; --spacing-xl: 40px;
+      --radius-sm: 4px; --radius-md: 8px; --radius-lg: 30px; --radius-chat-bubble: 18px;
+      --shadow-soft: 0 4px 15px rgba(0,0,0,0.08); --shadow-medium: 0 12px 30px rgba(0,0,0,0.12); --shadow-strong: 0 10px 30px rgba(0,0,0,0.1);
+      --font-size-xs: 0.8rem; --font-size-sm: 1rem; --font-size-md: 1.2rem; --font-size-lg: 1.6rem; --font-size-xl: 3.2rem;
+    }
+
+    /* === Basic Reset and Body Styles === */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Roboto', sans-serif; background-color: var(--color-bg); color: var(--color-text); line-height: 1.6; padding: var(--spacing-xl) var(--spacing-lg); }
+    .container { max-width: 1300px; margin: 0 auto; }
+
+    /* === Header Styles === */
+    header { text-align: center; margin-bottom: var(--spacing-xl); padding-bottom: var(--spacing-lg); position: relative; }
+    header:after { content: ""; display: block; width: 40px; height: 2px; background-color: var(--color-text); margin: var(--spacing-lg) auto 0; }
+    h1 { font-family: 'Playfair Display', serif; font-size: var(--font-size-xl); font-weight: 600; margin-bottom: 20px; letter-spacing: 0.5px; }
+    h2 { font-family: 'Playfair Display', serif; font-size: calc(var(--font-size-lg) * 1.2); font-weight: 600; margin-bottom: var(--spacing-sm); }
+    .description { max-width: 700px; margin: 0 auto; color: var(--color-text-secondary); font-weight: 300; font-size: 1.25rem; line-height: 1.8; }
+
+    /* === Filter Styles === */
+    .filter { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin: var(--spacing-xl) 0; padding: var(--spacing-lg); background-color: var(--color-card); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); }
+    .filter-btn { padding: var(--spacing-sm) var(--spacing-lg); background-color: transparent; border: 1px solid var(--color-border); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.3s ease; font-size: var(--font-size-sm); font-weight: 400; color: var(--color-text-secondary); }
+    .filter-btn:hover { background-color: var(--color-hover); }
+    .filter-btn.active { background-color: var(--color-text); color: white; border-color: var(--color-text); font-weight: 500; transform: scale(1.05); }
+
+    /* === Gallery and Card Styles === */
+    .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: var(--spacing-xl); }
+    .card { background-color: var(--color-card); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-soft); transition: transform 0.4s ease, box-shadow 0.4s ease; position: relative; display: flex; flex-direction: column; }
+    .card:hover { transform: translateY(-8px); box-shadow: var(--shadow-medium); }
+    .card-image { width: 100%; height: 340px; object-fit: cover; display: block; }
+    .card-content { padding: var(--spacing-lg); display: flex; flex-direction: column; gap: var(--spacing-sm); flex-grow: 1; }
+    .card-artist { font-family: 'Playfair Display', serif; font-size: var(--font-size-lg); font-weight: 600; letter-spacing: 0.3px; margin-bottom: 0; }
+    .card-title { font-style: italic; color: var(--color-text-secondary); margin: var(--spacing-sm) 0; font-weight: 300; font-size: var(--font-size-md); }
+    .card-price { font-size: 1.7rem; margin-top: auto; padding-top: var(--spacing-md); font-weight: 500; }
+    .negotiate-overlay { position: absolute; bottom: 0; left: 0; right: 0; transform: translateY(100%); transition: transform 0.2s ease-in-out; height: 70px; background-color: rgba(255,255,255,0.1); backdrop-filter: blur(2px); }
+    .card:hover .negotiate-overlay { transform: translateY(0); }
+    .negotiate-btn { background-color: var(--color-cta); color: white; border: none; font-size: var(--font-size-md); cursor: pointer; font-weight: 500; width: 100%; height: 100%; letter-spacing: 0.7px; text-transform: uppercase; transition: background-color 0.2s ease; display: flex; align-items: center; justify-content: center; }
+    .negotiate-btn:hover { background-color: var(--color-cta-hover); }
+
+    /* === Negotiation Page Styles === */
+    .negotiation-page { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--color-bg); z-index: 1000; display: none; overflow-y: auto; padding: var(--spacing-lg); }
+    .negotiation-container { display: flex; max-width: 1300px; height: calc(100vh - var(--spacing-lg) * 2 - 2px); margin: 0 auto; background-color: var(--color-card); border-radius: var(--radius-md); box-shadow: var(--shadow-medium); overflow: hidden; }
+    
+    /* === Artwork Details Section === */
+    .artwork-details { flex: 0 0 50%; padding: var(--spacing-xl); display: flex; flex-direction: column; border-right: 1px solid var(--color-border); overflow-y: auto; }
+    .artwork-details-header { margin-bottom: var(--spacing-lg); }
+    .artwork-details-header h2 { font-size: var(--font-size-xl); margin-bottom: var(--spacing-xs); line-height: 1.2; }
+    .artwork-details-header .artwork-title-year { font-size: var(--font-size-md); font-style: italic; color: var(--color-text-secondary); margin-bottom: var(--spacing-lg); }
+    .artwork-image-container { width: 100%; margin-bottom: var(--spacing-xl); text-align: center; background-color: var(--color-bg); padding: var(--spacing-md); border-radius: var(--radius-md); box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+    .artwork-image { width: 100%; max-height: 48vh; object-fit: contain; border-radius: var(--radius-sm); display: block; margin: 0 auto; box-shadow: var(--shadow-strong); }
+    .artwork-info-section { margin-bottom: var(--spacing-lg); }
+    .artwork-info-section h3 { font-family: 'Playfair Display', serif; font-size: var(--font-size-lg); margin-bottom: var(--spacing-md); padding-bottom: var(--spacing-sm); border-bottom: 1px solid var(--color-border); }
+    .artwork-meta-item { display: flex; margin-bottom: var(--spacing-sm); font-size: var(--font-size-sm); }
+    .artwork-meta-item strong { min-width: 120px; display: inline-block; font-weight: 500; }
+    .artwork-meta-item span { color: var(--color-text-secondary); }
+    .artwork-price-prominent { font-size: var(--font-size-lg); font-weight: 600; color: var(--color-cta); }
+    .artwork-description-text { color: var(--color-text-secondary); line-height: 1.7; font-size: var(--font-size-sm); }
+    
+    /* === Close Button === */
+    .close-btn { position: fixed; top: calc(var(--spacing-lg) + var(--spacing-md)); right: calc(var(--spacing-lg) + var(--spacing-md)); background: var(--color-text); color: white; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1001; box-shadow: var(--shadow-soft); transition: background-color 0.2s ease, transform 0.2s ease; }
+    .close-btn:hover { background-color: var(--color-cta); transform: scale(1.1); }
+
+    /* === Chat Interface === */
+    .chat-interface { flex: 1; padding: var(--spacing-xl); display: flex; flex-direction: column; background-color: var(--color-chat-bg); }
+    .chat-header { text-align: center; margin-bottom: var(--spacing-md); padding-bottom: var(--spacing-md); border-bottom: 1px solid var(--color-border); }
+    .chat-header h2 { font-size: var(--font-size-lg); margin-bottom: var(--spacing-xs); }
+    .chat-header p { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+    .chat-messages { flex-grow: 1; overflow-y: auto; padding: var(--spacing-md) var(--spacing-xs); display: flex; flex-direction: column; gap: var(--spacing-md); margin-bottom: var(--spacing-lg); }
+    .message { padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-chat-bubble); max-width: 75%; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: var(--font-size-sm); }
+    .bot-message { background-color: var(--color-bot-message-bg); color: var(--color-bot-message-text); align-self: flex-start; border-bottom-left-radius: var(--radius-sm); }
+    .user-message { background-color: var(--color-user-message-bg); color: var(--color-user-message-text); align-self: flex-end; border-bottom-right-radius: var(--radius-sm); }
+    
+    /* === Thinking Indicator (Three Dots) === */
+    .bot-thinking-indicator { 
+      display: flex; 
+      align-items: center; 
+      gap: var(--spacing-sm); 
+      background-color: var(--color-thinking-bg); 
+      padding: var(--spacing-sm) var(--spacing-md); 
+      border-radius: var(--radius-chat-bubble); 
+      align-self: flex-start; 
+      border-bottom-left-radius: var(--radius-sm); 
+      max-width: fit-content; 
+      min-height: 36px; /* Adjust based on dot size and padding */
+    }
+    .typing-dots {
+      display: flex;
+      align-items: center; 
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      margin: 0 3px; 
+      background-color: var(--color-dot-thinking); 
+      border-radius: 50%;
+      opacity: 0.4;
+      animation: typing-dot-animation 1.4s infinite ease-in-out both;
+    }
+    .dot:nth-child(1) { animation-delay: -0.32s; }
+    .dot:nth-child(2) { animation-delay: -0.16s; }
+    .dot:nth-child(3) { animation-delay: 0s; }
+
+    @keyframes typing-dot-animation {
+      0%, 80%, 100% { opacity: 0.4; transform: scale(0.65); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+    /* If you want "Thinking..." text next to the dots, uncomment this: */
+    /* .bot-thinking-indicator .thinking-text-label { 
+      font-size: var(--font-size-sm); 
+      color: var(--color-thinking-text); 
+      font-style: italic; 
+    } */
+
+    /* === Chat Input === */
+    .chat-input-container { display: flex; gap: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--color-border); }
+    .chat-input { flex: 1; padding: var(--spacing-md); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-family: 'Roboto', sans-serif; font-size: var(--font-size-sm); }
+    .chat-input:focus { outline: none; border-color: var(--color-cta); box-shadow: 0 0 0 2px rgba(var(--color-cta), 0.2); }
+    .send-btn { padding: var(--spacing-md) var(--spacing-lg); background-color: var(--color-cta); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 500; font-size: var(--font-size-sm); transition: background-color 0.2s ease; }
+    .send-btn:hover { background-color: var(--color-cta-hover); }
+
+    /* === Responsive Adjustments === */
+    @media (max-width: 1100px) { .gallery { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 900px) { .negotiation-container { flex-direction: column; height: auto; max-height: 95vh; } .artwork-details { flex: 0 0 auto; border-right: none; border-bottom: 1px solid var(--color-border); padding: var(--spacing-lg); max-height: none; } .artwork-image-container { margin-bottom: var(--spacing-lg); } .artwork-image { max-height: 40vh; } .chat-interface { padding: var(--spacing-lg); flex-grow: 1; } .close-btn { top: var(--spacing-md); right: var(--spacing-md); } }
+    @media (max-width: 700px) { .gallery { grid-template-columns: 1fr; } h1 { font-size: 2.6rem; } .description { font-size: 1.15rem; } .filter-btn { font-size: 1rem; padding: 10px 20px; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Art Collection</h1>
+      <p class="description">Discover extraordinary pieces from talented artists. Browse our curated collection and negotiate prices directly through our chat assistant.</p>
+    </header>
+    <div class="filter">
+      <button class="filter-btn active" data-category="all">All Art</button>
+      <button class="filter-btn" data-category="paintings">Paintings</button>
+      <button class="filter-btn" data-category="sculptures">Sculptures</button>
+      <button class="filter-btn" data-category="mixed-media">Mixed Media</button>
+      <button class="filter-btn" data-category="furniture">Furniture</button>
+    </div>
+    <div class="gallery" id="art-gallery"></div>
+  </div>
+  <div class="negotiation-page" id="negotiation-page">
+    <button class="close-btn" id="close-negotiation" title="Close Negotiation">&times;</button>
+    <div class="negotiation-container">
+      <div class="artwork-details" id="artwork-details-content"></div>
+      <div class="chat-interface">
+        <div class="chat-header">
+          <h2>Negotiate Price</h2>
+          <p>Discuss pricing with our virtual art advisor.</p>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-container">
+          <input type="text" class="chat-input" id="chat-input" placeholder="Type your message or offer...">
+          <button class="send-btn" id="send-message">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // --- ART GALLERY & NEGOTIATION CHAT APPLICATION ---
+
+  /**
+   * @file Manages an interactive art gallery with negotiation capabilities.
+   * Features include artwork display, filtering, and a real-time chat interface
+   * that communicates with a backend API for negotiation logic.
+   * Includes a three-dot "thinking" indicator for asynchronous operations.
+   */
+
+  /**
+   * Configuration for API endpoints.
+   * @constant {object} API_ENDPOINTS
+   * @property {string} artworks - URL to fetch artwork data.
+   * @property {string} negotiate - URL for the negotiation backend API.
+   */
+  const API_ENDPOINTS = {
+    artworks: "https://art-negotiator-api.onrender.com/api/artworks", // Example Firebase URL
+    negotiate: "https://art-negotiator-api.onrender.com/api/negotiate" // Backend API endpoint
+  };
+
+  // --- Global Application State ---
+  let currentNegotiatingArtwork = null; // Stores the artwork object currently under negotiation.
+  let allFetchedArtworks = [];         // Caches all artworks fetched from the API.
+  let thinkingIndicatorTimeoutId = null; // ID for the thinking indicator's failsafe timeout.
+
+  // --- DOM Element References (Cached in initializeApp) ---
+  let galleryEl, negotiationPageEl, artworkDetailsEl, 
+      chatMessagesEl, chatInputEl, closeNegotiationBtn, sendMessageBtn;
+
+  /**
+   * Fetches artwork data from the configured API endpoint.
+   * Handles Firebase's typical object-of-objects structure by converting it to an array.
+   * @async
+   * @returns {Promise<Array<Object>>} A promise resolving to an array of artwork objects.
+   * @throws {Error} If the fetch request fails or data format is unexpected.
+   */
+  async function fetchArtworks() {
+    console.info(`Fetching artworks from: ${API_ENDPOINTS.artworks}`);
+    try {
+      const response = await fetch(API_ENDPOINTS.artworks);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Failed to fetch artworks - ${response.statusText}`);
+      }
+      const data = await response.json();
+      // Firebase often returns data as an object { key1: artwork1, key2: artwork2, ... }
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        const artworksArray = Object.values(data); // Convert object values to an array
+        console.info(`Fetched and transformed ${artworksArray.length} artworks.`);
+        return artworksArray;
+      } else if (Array.isArray(data)) { // Handle if API directly returns an array
+        console.info(`Fetched ${data.length} artworks directly as array.`);
+        return data;
+      }
+      console.warn("Fetched artworks data was not in the expected object or array format:", data);
+      return []; // Return empty array for unexpected formats
+    } catch (error) {
+      console.error("Critical error in fetchArtworks:", error);
+      throw error; // Re-throw to be handled by the calling function (initializeApp)
+    }
+  }
+
+  /**
+   * Creates an HTML element for displaying a single artwork card in the gallery.
+   * @param {Object} artwork - The artwork data object.
+   * @property {string} artwork.id - Unique identifier for the artwork.
+   * @property {string} [artwork.image] - URL of the artwork image.
+   * @property {string} [artwork.title="Untitled Artwork"] - Title of the artwork.
+   * @property {string} [artwork.artist="Unknown Artist"] - Artist of the artwork.
+   * @property {string} [artwork.year="N/A"] - Year the artwork was created.
+   * @property {string} [artwork.price="Price upon request"] - Price of the artwork.
+   * @property {string} [artwork.category="uncategorized"] - Category of the artwork for filtering.
+   * @returns {HTMLElement} The fully constructed card element.
+   */
+  function createArtworkCardElement(artwork) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.category = artwork.category || 'uncategorized';
+    // Default placeholder image if actual image is missing
+    const imageUrl = artwork.image || `https://via.placeholder.com/400x300.png?text=${encodeURIComponent(artwork.title || 'No Image')}`;
+    
+    card.innerHTML = `
+      <img class="card-image" src="${imageUrl}" alt="${artwork.title || 'Untitled Artwork'} by ${artwork.artist || 'Unknown Artist'}">
+      <div class="card-content">
+        <h3 class="card-artist">${artwork.artist || 'Unknown Artist'}</h3>
+        <p class="card-title">${artwork.title || 'Untitled Artwork'}, ${artwork.year || 'N/A'}</p>
+        <p class="card-price">${artwork.price || 'Price upon request'}</p>
+      </div>
+      <div class="negotiate-overlay">
+        <button class="negotiate-btn" data-id="${artwork.id}">Negotiate Price</button>
+      </div>`;
+    return card;
+  }
+
+  /**
+   * Renders a list of artwork cards into the main gallery display.
+   * Clears previous content and attaches event listeners to new "Negotiate" buttons.
+   * @param {Array<Object>} artworksToRender - An array of artwork objects to be displayed.
+   */
+  function renderArtworks(artworksToRender) {
+    if (!galleryEl) {
+      console.error("Gallery element (galleryEl) is not initialized. Cannot render artworks.");
+      return;
+    }
+    galleryEl.innerHTML = ''; // Clear any existing artworks
+
+    if (!artworksToRender || artworksToRender.length === 0) {
+      galleryEl.innerHTML = "<p style='text-align:center; padding: var(--spacing-lg);'>No artworks match the current filter.</p>";
+      return;
+    }
+
+    artworksToRender.forEach(artwork => {
+      if (!artwork.id) {
+        console.warn("Artwork data is missing an 'id'. Skipping card creation:", artwork);
+        return; 
+      }
+      const cardElement = createArtworkCardElement(artwork);
+      galleryEl.appendChild(cardElement);
+    });
+
+    // Re-attach event listeners to "Negotiate Price" buttons for the newly rendered cards
+    galleryEl.querySelectorAll('.negotiate-btn').forEach(button => {
+      button.addEventListener('click', function() {
+        const artId = this.dataset.id;
+        const selectedArtwork = allFetchedArtworks.find(art => art.id === artId);
+        if (selectedArtwork) {
+          openNegotiationPage(selectedArtwork);
+        } else {
+          console.error(`Artwork with ID "${artId}" not found in cached artworks. This might indicate a data consistency issue.`);
+          // Optionally, inform the user: alert("Sorry, details for this artwork could not be loaded.");
+        }
+      });
+    });
+  }
+
+  /**
+   * Initializes filter button event listeners.
+   * When a filter button is clicked, it updates the active state and re-renders the gallery.
+   */
+  function setupFilters() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        filterButtons.forEach(btn => btn.classList.remove('active')); // Deactivate all
+        this.classList.add('active'); // Activate clicked button
+        const category = this.dataset.category;
+        const artworksToDisplay = (category === 'all')
+          ? allFetchedArtworks
+          : allFetchedArtworks.filter(art => (art.category || 'uncategorized').toLowerCase() === category.toLowerCase());
+        renderArtworks(artworksToDisplay);
+      });
+    });
+  }
+
+  /**
+   * Populates the artwork details panel in the negotiation page.
+   * @param {Object} artwork - The artwork object to display.
+   */
+  function populateArtworkDetails(artwork) {
+    if (!artworkDetailsEl) { 
+      console.error("Artwork details element (artworkDetailsEl) is not initialized.");
+      return; 
+    }
+    const imageUrl = artwork.image || `https://via.placeholder.com/400x300.png?text=${encodeURIComponent(artwork.title || 'No Image')}`;
+    artworkDetailsEl.innerHTML = `
+      <div class="artwork-details-header">
+        <h2>${artwork.artist || 'Unknown Artist'}</h2>
+        <p class="artwork-title-year"><em>${artwork.title || 'Untitled'}</em>, ${artwork.year || 'N/A'}</p>
+      </div>
+      <div class="artwork-image-container">
+        <img class="artwork-image" src="${imageUrl}" alt="Image of ${artwork.title || 'artwork'} by ${artwork.artist || 'artist'}">
+      </div>
+      <div class="artwork-info-section">
+        <h3>Artwork Information</h3>
+        <div class="artwork-meta-item"><strong>Medium:</strong> <span>${artwork.medium || 'N/A'}</span></div>
+        <div class="artwork-meta-item"><strong>Dimensions:</strong> <span>${artwork.dimensions || 'N/A'}</span></div>
+      </div>
+      <div class="artwork-info-section">
+        <h3>Price & Availability</h3>
+        <div class="artwork-meta-item"><strong>Listed Price:</strong> <span class="artwork-price-prominent">${artwork.price || 'Price upon request'}</span></div>
+      </div>
+      <div class="artwork-info-section">
+        <h3>About this Piece</h3>
+        <p class="artwork-description-text">${artwork.description || 'No description available for this piece.'}</p>
+      </div>`;
+  }
+    
+  /**
+   * Opens and prepares the negotiation page for a selected artwork.
+   * Makes an initial API call to the backend to start the negotiation chat.
+   * @async
+   * @param {Object} artwork - The artwork object to be negotiated.
+   */
+  async function openNegotiationPage(artwork) {
+    console.info(`Opening negotiation page for: "${artwork.title || 'Unknown Title'}" (ID: ${artwork.id})`);
+    currentNegotiatingArtwork = artwork;
+    populateArtworkDetails(artwork); 
+
+    // Ensure crucial chat elements are available
+    if (!negotiationPageEl || !chatMessagesEl || !chatInputEl) {
+      console.error("One or more critical negotiation page elements are not initialized. Cannot open negotiation.");
+      alert("Error: Chat interface could not be loaded."); // User-facing error
+      return;
+    }
+
+    chatMessagesEl.innerHTML = ''; 
+    chatInputEl.value = ''; 
+    negotiationPageEl.style.display = 'block';
+    document.body.style.overflow = 'hidden'; 
+    chatInputEl.focus(); 
+
+    showBotThinkingIndicator(true); // Show thinking indicator for the initial API call
+
+    const initialPayload = {
+      artId: artwork.id,
+      userMessage: `User has initiated negotiation for "${artwork.title || 'this artwork'}". Please provide a welcoming message and state the listed price.` 
+    };
+
+    console.info("Initiating negotiation with backend. Payload:", JSON.stringify(initialPayload));
+
+    try {
+      const response = await fetch(API_ENDPOINTS.negotiate, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(initialPayload),
+      });
+      const responseData = await response.json(); 
+      hideBotThinkingIndicator(); 
+
+      if (!response.ok) {
+        console.error("API Error during negotiation initiation:", response.status, responseData);
+        const errorMessage = responseData?.message || `Error starting negotiation (Status: ${response.status}). Please try again.`;
+        addMessageToChat(errorMessage, 'bot');
+      } else {
+        console.info("Initial response from backend negotiator:", responseData);
+        const botMessage = responseData?.message || "Let's discuss this artwork. Feel free to make an offer or ask any questions.";
+        addMessageToChat(botMessage, 'bot');
+      }
+    } catch (error) {
+      console.error("Network error during negotiation initiation:", error);
+      hideBotThinkingIndicator(); 
+      addMessageToChat("A connection error occurred while starting the negotiation. Please check your internet and try again.", 'bot');
+    }
+  }
+
+  /**
+   * Adds a text message to the chat interface.
+   * @param {string} text - The content of the message.
+   * @param {'user' | 'bot'} sender - Indicates if the message is from the 'user' or 'bot'.
+   */
+  function addMessageToChat(text, sender) { 
+    if (!chatMessagesEl) {
+      console.error("Chat messages container (chatMessagesEl) not initialized. Cannot add message.");
+      return;
+    }
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+    messageDiv.textContent = text; 
+    chatMessagesEl.appendChild(messageDiv);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; // Auto-scroll to the latest message
+  }
+
+  /**
+   * Displays a "thinking" indicator (three dots) in the chat area.
+   * This indicates that the bot is processing a request.
+   * @param {boolean} [isInitial=false] - Flag for the very first message (not used for styling here).
+   */
+  function showBotThinkingIndicator(isInitial = false) { 
+    if (!chatMessagesEl) { 
+      console.error("Cannot show thinking indicator: Chat messages container (chatMessagesEl) not initialized.");
+      return; 
+    }
+    
+    hideBotThinkingIndicator(); // Remove any pre-existing indicator
+
+    const thinkingDiv = document.createElement('div');
+    thinkingDiv.className = 'message bot-thinking-indicator'; 
+    thinkingDiv.id = 'bot-thinking-message'; 
+    
+    const dotsContainer = document.createElement('div');
+    dotsContainer.className = 'typing-dots';
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dotsContainer.appendChild(dot);
+    }
+    thinkingDiv.appendChild(dotsContainer);
+    
+    // Optional: If you want "Thinking..." text label next to the dots.
+    // const textLabel = document.createElement('span');
+    // textLabel.className = 'thinking-text-label';
+    // textLabel.textContent = 'Thinking...';
+    // thinkingDiv.appendChild(textLabel);
+    
+    chatMessagesEl.appendChild(thinkingDiv);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight; // Scroll to show indicator
+    console.info("Thinking indicator (dots) shown. Initial call flag:", isInitial);
+
+    // Failsafe: Automatically hide indicator after a timeout if API is unresponsive
+    if (thinkingIndicatorTimeoutId) clearTimeout(thinkingIndicatorTimeoutId); 
+    thinkingIndicatorTimeoutId = setTimeout(() => {
+      console.warn("Thinking indicator fallback timeout reached. Hiding indicator.");
+      hideBotThinkingIndicator(); 
+    }, 15000); // 15-second timeout
+  }
+
+  /**
+   * Removes the "thinking" indicator from the chat.
+   * Clears the failsafe timeout associated with it.
+   */
+  function hideBotThinkingIndicator() {
+    if (thinkingIndicatorTimeoutId) {
+      clearTimeout(thinkingIndicatorTimeoutId);
+      thinkingIndicatorTimeoutId = null;
+    }
+    const thinkingDiv = document.getElementById('bot-thinking-message');
+    if (thinkingDiv) {
+      thinkingDiv.remove();
+    }
+  }
+
+  /**
+   * Sends the user's message to the backend API and retrieves the bot's response.
+   * @async
+   * @param {string} userMessageText - The text content of the user's message.
+   * @param {Object} artworkContext - The artwork currently being negotiated.
+   * @returns {Promise<string>} A promise that resolves to the bot's reply message string.
+   */
+  async function getBotApiResponse(userMessageText, artworkContext) {
+    console.info(`Getting bot response for user message: "${userMessageText}", Artwork ID: ${artworkContext.id}`);
+    const payload = {
+      artId: artworkContext.id,
+      userMessage: userMessageText 
+    };
+
+    try {
+      const response = await fetch(API_ENDPOINTS.negotiate, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const responseData = await response.json(); 
+
+      if (!response.ok) {
+        console.error("Error from backend API (getBotApiResponse):", response.status, responseData);
+        // Prefer message from API's JSON error response if available
+        return responseData?.message || `API error (Status: ${response.status}). Please try again.`;
+      }
+      
+      console.info("Received from backend negotiator:", responseData);
+      if (responseData && typeof responseData.message === 'string') {
+        return responseData.message;
+      } else {
+        console.warn("Backend response was missing a 'message' string or was not in expected format:", responseData);
+        return "I've received your input. How can I assist you further?"; // Generic fallback
+      }
+
+    } catch (error) {
+      console.error("Network error or other issue calling negotiate API:", error);
+      return "I'm having trouble connecting to our negotiation system. Please check your connection or try again shortly.";
+    }
+  }
+
+  /**
+   * Handles the event of a user sending a message.
+   * Displays the user's message, calls the API for a bot response, and displays it.
+   * @async
+   */
+  async function handleSendMessage() {
+    if (!chatInputEl) {
+         console.error("Chat input element (chatInputEl) is not available. Cannot send message.");
+         return;
+    }
+    const messageText = chatInputEl.value.trim();
+
+    if (!currentNegotiatingArtwork) {
+      addMessageToChat("Please select an artwork to begin negotiation.", "bot");
+      return;
+    }
+    if (!messageText) {
+      // console.info("User attempted to send an empty message."); // Optional log
+      return; // Do nothing for empty messages
+    }
+
+    addMessageToChat(messageText, 'user');
+    chatInputEl.value = ''; // Clear input field after sending
+    
+    console.info(`Sending message to backend for processing: "${messageText}"`);
+    showBotThinkingIndicator(); 
+
+    try {
+      const botReply = await getBotApiResponse(messageText, currentNegotiatingArtwork);
+      hideBotThinkingIndicator(); 
+      addMessageToChat(botReply, 'bot');
+    } catch (error) { 
+      console.error("Unexpected error in handleSendMessage after getBotApiResponse:", error);
+      hideBotThinkingIndicator(); 
+      addMessageToChat("I encountered an unexpected issue processing your request. Please try again.", 'bot');
+    }
+  }
+    
+  /**
+   * Initializes the entire application.
+   * - Caches main DOM elements.
+   * - Fetches initial artwork data and renders the gallery.
+   * - Sets up event listeners for filters, chat send button, chat input (Enter key), and negotiation close button.
+   * @async
+   */
+  async function initializeApp() {
+    console.info("Initializing Art Gallery Application...");
+
+    // Cache references to frequently used DOM elements
+    galleryEl = document.getElementById('art-gallery');
+    negotiationPageEl = document.getElementById('negotiation-page');
+    artworkDetailsEl = document.getElementById('artwork-details-content');
+    chatMessagesEl = document.getElementById('chat-messages');
+    chatInputEl = document.getElementById('chat-input');
+    closeNegotiationBtn = document.getElementById('close-negotiation');
+    sendMessageBtn = document.getElementById('send-message');
+
+    // Perform a basic check to ensure critical page elements are present
+    if (!galleryEl || !negotiationPageEl || !artworkDetailsEl || 
+        !chatMessagesEl || !chatInputEl || !closeNegotiationBtn || !sendMessageBtn) {
+        console.error("One or more critical DOM elements are missing. Application cannot initialize correctly.");
+        document.body.innerHTML = "<p style='color:red; text-align:center; padding:20px; font-size:1.2em;'>Error: The page structure appears to be incomplete. Please contact support or try refreshing.</p>";
+        return; // Halt initialization
+    }
+
+    try {
+      allFetchedArtworks = await fetchArtworks(); 
+      if (allFetchedArtworks && allFetchedArtworks.length > 0) {
+        renderArtworks(allFetchedArtworks); 
+        setupFilters();       
+      } else {
+        if (galleryEl) galleryEl.innerHTML = "<p style='text-align:center; color:orange; padding: var(--spacing-lg);'>No artworks are currently available. Please check back later.</p>";
+      }
+      
+      // Event listener for closing the negotiation panel
+      closeNegotiationBtn.addEventListener('click', () => {
+        if (negotiationPageEl) negotiationPageEl.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scrolling to main page
+        currentNegotiatingArtwork = null;     // Clear current artwork context
+        hideBotThinkingIndicator();           // Ensure thinking indicator is hidden
+      });
+      
+      // Event listener for the chat send button
+      sendMessageBtn.addEventListener('click', handleSendMessage);
+      
+      // Event listener for Enter key in the chat input field
+      chatInputEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { // Send on Enter, allow Shift+Enter for new lines (if input was textarea)
+           e.preventDefault(); // Prevent default action (e.g., form submission or newline)
+           handleSendMessage(); 
+        }
+      });
+      console.info("Application initialized successfully.");
+    } catch (error) {
+      // Catch errors from fetchArtworks or other setup steps
+      console.error("Failed to initialize the application:", error);
+      if(galleryEl) galleryEl.innerHTML = `<p style='text-align:center; color:red; padding: var(--spacing-lg);'>Could not load artworks due to an error: ${error.message}. Please try refreshing the page.</p>`;
+    }
+  }
+
+  // Start the application once the DOM is fully loaded and parsed
+  document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
+</body>
+</html>
